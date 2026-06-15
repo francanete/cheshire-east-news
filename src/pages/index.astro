@@ -1,0 +1,77 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import NewsCard from '../components/NewsCard.astro';
+
+const sourceUrl = 'https://www.cheshireeast.gov.uk/council_and_democracy/council_information/media_hub/media_releases/media-releases.aspx';
+const res = await fetch(sourceUrl, { headers: { 'user-agent': 'Mozilla/5.0' } });
+const html = await res.text();
+const items = [];
+const regex = /<a[^>]+href="([^"]*media_releases[^"]+)"[^>]*>(.*?)<\/a>[\s\S]*?(?:<p[^>]*class="[^\"]*intro[^\"]*"[^>]*>(.*?)<\/p>)?/gi;
+let match;
+const seen = new Set();
+while ((match = regex.exec(html)) && items.length < 6) {
+  const url = new URL(match[1], sourceUrl).toString();
+  if (seen.has(url)) continue;
+  const title = match[2].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  if (!title || title.length < 10) continue;
+  seen.add(url);
+  const summary = (match[3] || 'Open the council release for the full story.').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  items.push({ title, summary, url });
+}
+if (!items.length) {
+  items.push({ title: 'Visit the Cheshire East Council media hub', summary: 'Live news extraction did not yield items during build, so the site links directly to the council source.', url: sourceUrl });
+}
+---
+<BaseLayout title="Cheshire East Council News" description="A professional Astro news dashboard for the latest Cheshire East Council updates.">
+  <main class="wrap grid" style="gap:24px;">
+    <section class="card" style="padding:32px;">
+      <div class="pill">Live council updates · public, free, static</div>
+      <div style="display:grid; gap:18px; grid-template-columns: 1.6fr .9fr; align-items:end; margin-top:20px;">
+        <div>
+          <p class="kicker">Cheshire East Council</p>
+          <h1 style="font-size:clamp(2.4rem, 6vw, 4.8rem); line-height:0.95; margin-top:12px; max-width:11ch;">Latest news, cleanly presented.</h1>
+          <p class="muted" style="font-size:1.08rem; line-height:1.75; max-width:70ch; margin-top:16px;">A dev-style public site that tracks the council’s latest media releases and surfaces them in a sharper, easier-to-scan format.</p>
+        </div>
+        <div class="stat">
+          <div class="kicker">Source</div>
+          <div style="font-size:1.1rem; font-weight:700; margin-top:10px;">Council media hub</div>
+          <div class="muted" style="margin-top:8px; line-height:1.6;">Built from the public Cheshire East Council releases page and deployed to GitHub Pages for free.</div>
+        </div>
+      </div>
+      <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:22px;">
+        <a class="btn" href={sourceUrl} target="_blank" rel="noreferrer">Open council source</a>
+        <span class="pill">Astro · GitHub Pages · Static build</span>
+      </div>
+    </section>
+
+    <section class="grid" style="grid-template-columns: 1fr 320px; align-items:start;">
+      <div class="grid" style="gap:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:end; gap:16px;">
+          <div>
+            <p class="kicker">Latest</p>
+            <h2 style="margin-top:8px; font-size:1.8rem;">Recent council releases</h2>
+          </div>
+          <div class="muted">Updated at build time</div>
+        </div>
+        <div class="news">
+          {items.map((item) => <NewsCard item={item} />)}
+        </div>
+      </div>
+      <aside class="grid" style="gap:16px; position:sticky; top:20px;">
+        <div class="card" style="padding:20px;">
+          <p class="kicker">What this is</p>
+          <ul class="muted" style="line-height:1.9; padding-left:18px; margin:12px 0 0;">
+            <li>Public, free GitHub Pages deployment</li>
+            <li>Astro static site</li>
+            <li>Professional dev-style layout</li>
+            <li>Latest council news surfaced cleanly</li>
+          </ul>
+        </div>
+        <div class="card" style="padding:20px;">
+          <p class="kicker">Next upgrade</p>
+          <p class="muted" style="line-height:1.7; margin-top:10px;">If you want, I can later add category filters, a richer feed parser, or a tiny alert form for weekly updates.</p>
+        </div>
+      </aside>
+    </section>
+  </main>
+</BaseLayout>
